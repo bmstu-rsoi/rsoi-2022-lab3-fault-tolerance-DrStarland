@@ -22,19 +22,9 @@ func main() {
 	zapLogger, _ := zap.NewProduction()
 	defer zapLogger.Sync() // flushes buffer, if any
 	logger := zapLogger.Sugar()
-	//	repoFlight := flight.NewPostgresRepo(db)
-	// allHandler := &handlers.FlightsHandler{
-	// 	Logger:     logger,
-	// 	FlightRepo: repoFlight,
-	// }
 
 	router := httprouter.New()
-	router.PanicHandler = func(w http.ResponseWriter, r *http.Request, err interface{}) {
-		log.Println("panicMiddleware is working", r.URL.Path)
-		if trueErr, ok := err.(error); ok == true {
-			http.Error(w, "Internal server error: "+trueErr.Error(), http.StatusInternalServerError)
-		}
-	}
+	router.PanicHandler = mid.PanicHandler
 
 	gs := &handlers.GatewayHandler{
 		TicketServiceAddress: "http://testum_tickets:8070",
@@ -62,7 +52,8 @@ func main() {
 		"type", "START",
 		"addr", ServerAddress,
 	)
-	err = http.ListenAndServe(ServerAddress, router)
+
+	err := http.ListenAndServe(ServerAddress, router)
 	if err != nil {
 		log.Panicln(err.Error())
 	}

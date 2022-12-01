@@ -23,6 +23,7 @@ type GatewayHandler struct {
 	Logger               *zap.SugaredLogger
 }
 
+// ne menyat
 func (h *GatewayHandler) GetAllFlights(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	params := r.URL.Query()
 
