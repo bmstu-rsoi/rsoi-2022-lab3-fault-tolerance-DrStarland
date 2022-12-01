@@ -7,7 +7,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"gateway/pkg/database"
 	"gateway/pkg/handlers"
 
 	mid "gateway/pkg/middleware"
@@ -20,12 +19,6 @@ func HealthOK(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func main() {
-	db, err := database.CreateConnection()
-	if err != nil {
-		log.Println(err.Error())
-	}
-	defer db.Close()
-
 	zapLogger, _ := zap.NewProduction()
 	defer zapLogger.Sync() // flushes buffer, if any
 	logger := zapLogger.Sugar()
