@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"gateway/pkg/models/flights"
-	"gateway/pkg/models/privilege"
 	"gateway/pkg/models/tickets"
 	"gateway/pkg/myjson"
 	"gateway/pkg/services"
@@ -230,8 +229,14 @@ func (h *GatewayHandler) GetUserInfo(w http.ResponseWriter, r *http.Request, ps 
 			return
 		}
 
-		userInfo.Privilege = &privilege.PrivilegeShortInfo{}
-		myjson.JsonResponce(w, http.StatusOK, userInfo)
+		pseudoUserInfo := struct {
+			Privilege   string `json:"privilege"`
+			TicketsInfo *[]tickets.TicketInfo
+		}{
+			TicketsInfo: userInfo.TicketsInfo,
+		}
+
+		myjson.JsonResponce(w, http.StatusOK, pseudoUserInfo)
 		return
 	}
 
