@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"gateway/pkg/models/flights"
+	"gateway/pkg/models/privilege"
 	"gateway/pkg/models/tickets"
 	"gateway/pkg/myjson"
 	"gateway/pkg/services"
@@ -201,7 +202,7 @@ func (h *GatewayHandler) BuyTicket(w http.ResponseWriter, r *http.Request, ps ht
 	// h.Logger.Infoln("CRINGE4 ", *tickets)
 	if err != nil {
 		h.Logger.Errorln("failed to get response: " + err.Error())
-		myjson.JsonError(w, http.StatusServiceUnavailable, "Bonus Service is unavailable: "+"failed to get response: "+err.Error())
+		myjson.JsonError(w, http.StatusServiceUnavailable, "Bonus Service unavailable")
 		return
 	}
 	// h.Logger.Debugln("CRINGE4 ", *tickets)
@@ -229,7 +230,7 @@ func (h *GatewayHandler) GetUserInfo(w http.ResponseWriter, r *http.Request, ps 
 			return
 		}
 
-		userInfo.Privilege = nil
+		userInfo.Privilege = &privilege.PrivilegeShortInfo{}
 		myjson.JsonResponce(w, http.StatusOK, userInfo)
 		return
 	}
@@ -252,7 +253,7 @@ func (h *GatewayHandler) GetPrivilege(w http.ResponseWriter, r *http.Request, ps
 
 	if err != nil {
 		h.Logger.Errorln("failed to get response: " + err.Error())
-		myjson.JsonError(w, http.StatusServiceUnavailable, "Bonus Service is unavailable")
+		myjson.JsonError(w, http.StatusServiceUnavailable, "Bonus Service unavailable")
 		return
 	}
 
