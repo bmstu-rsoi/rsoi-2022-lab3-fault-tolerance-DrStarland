@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"gateway/pkg/models/flights"
 	"gateway/pkg/models/tickets"
 	"gateway/pkg/myjson"
@@ -29,7 +28,7 @@ func (h *GatewayHandler) GetAllFlights(w http.ResponseWriter, r *http.Request, p
 
 	flightsSlice, err := services.GetAllFlightsInfo(h.FlightServiceAddress)
 	if err != nil {
-		h.Logger.Errorln("failed to get response from flighst service: " + err.Error())
+		h.Logger.Errorln("failed to get response from flight service: " + err.Error())
 		myjson.JsonError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -67,22 +66,21 @@ func (h *GatewayHandler) GetAllFlights(w http.ResponseWriter, r *http.Request, p
 	}
 
 	flightsStripped := (*flightsSlice)[(page-1)*size : right]
-	cars := flights.FlightsLimited{
+	result := flights.FlightsLimited{
 		Page:          page,
 		PageSize:      size,
 		TotalElements: len(flightsStripped),
 		Items:         &flightsStripped,
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-
-	myjson.JsonResponce(w, http.StatusOK, cars)
+	myjson.JsonResponce(w, http.StatusOK, result)
 }
 
+// ne menyat
 func (h *GatewayHandler) GetUserTickets(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	username := r.Header.Get("X-User-Name")
 	if username == "" {
-		log.Printf("Username header is empty")
+		h.Logger.Errorln("username header is empty")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -94,25 +92,21 @@ func (h *GatewayHandler) GetUserTickets(w http.ResponseWriter, r *http.Request, 
 	)
 
 	if err != nil {
-		h.Logger.Errorln("Failed to get response: " + err.Error())
+		h.Logger.Errorln("failed to get response: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(ticketsInfo); err != nil {
-		h.Logger.Errorln("Failed to encode response: " + err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	myjson.JsonResponce(w, http.StatusOK, ticketsInfo)
 
 	w.WriteHeader(http.StatusOK)
 }
 
+// ne menyat
 func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	username := r.Header.Get("X-User-Name")
 	if username == "" {
-		h.Logger.Info("Username header is empty")
+		h.Logger.Info("username header is empty")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -125,7 +119,7 @@ func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps
 	)
 
 	if err != nil {
-		h.Logger.Errorln("Failed to get response: " + err.Error())
+		h.Logger.Errorln("failed to get response: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -133,6 +127,7 @@ func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// ne menyat
 func (h *GatewayHandler) GetUserTicket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	username := r.Header.Get("X-User-Name")
 	if username == "" {
@@ -155,7 +150,7 @@ func (h *GatewayHandler) GetUserTicket(w http.ResponseWriter, r *http.Request, p
 	// h.Logger.Infoln("Where is nil 3?", ticketsInfo, err)
 
 	if err != nil {
-		h.Logger.Errorln("Failed to get response: " + err.Error())
+		h.Logger.Errorln("failed to get response: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -170,7 +165,7 @@ func (h *GatewayHandler) GetUserTicket(w http.ResponseWriter, r *http.Request, p
 	// h.Logger.Infoln("Where is nil 5? ", ticketInfo)
 	// h.Logger.Info(ticketUID, ticketInfo)
 	if ticketInfo == nil {
-		myjson.JsonError(w, http.StatusNotFound, "Ticket not found")
+		myjson.JsonError(w, http.StatusNotFound, "ticket not found")
 		return
 	}
 	// h.Logger.Infoln("Where is nil 6? ", ticketInfo)
@@ -180,11 +175,10 @@ func (h *GatewayHandler) GetUserTicket(w http.ResponseWriter, r *http.Request, p
 func (h *GatewayHandler) BuyTicket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	username := r.Header.Get("X-User-Name")
 	if username == "" {
-		h.Logger.Errorln("Username header is empty")
+		h.Logger.Errorln("username header is empty")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 	// h.Logger.Infoln("CRINGE1 " + username)
 	var ticketInfo tickets.BuyTicketInfo
 
@@ -194,7 +188,6 @@ func (h *GatewayHandler) BuyTicket(w http.ResponseWriter, r *http.Request, ps ht
 	}
 	r.Body.Close()
 	// h.Logger.Infoln("CRINGE2 " + string(body))
-
 	err = myjson.From(body, &ticketInfo)
 	if err != nil {
 		h.Logger.Errorln("failed to decode post request: " + err.Error())
@@ -202,7 +195,6 @@ func (h *GatewayHandler) BuyTicket(w http.ResponseWriter, r *http.Request, ps ht
 		return
 	}
 	// h.Logger.Infoln("CRINGE3 ", ticketInfo)
-
 	tickets, err := services.BuyTicket(
 		h.TicketServiceAddress,
 		h.FlightServiceAddress,
@@ -210,24 +202,20 @@ func (h *GatewayHandler) BuyTicket(w http.ResponseWriter, r *http.Request, ps ht
 		username,
 		&ticketInfo,
 	)
-
 	// h.Logger.Infoln("CRINGE4 ", *tickets)
-
 	if err != nil {
-		// h.Logger.Errorln("failed to get response: " + err.Error())
-		myjson.JsonError(w, http.StatusBadRequest, "failed to get response: "+err.Error())
+		h.Logger.Errorln("failed to get response: " + err.Error())
+		myjson.JsonError(w, http.StatusServiceUnavailable, "Bonus Service is unavailable: "+"failed to get response: "+err.Error())
 		return
 	}
-
 	// h.Logger.Debugln("CRINGE4 ", *tickets)
-
 	myjson.JsonResponce(w, http.StatusOK, tickets)
 }
 
 func (h *GatewayHandler) GetUserInfo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	username := r.Header.Get("X-User-Name")
 	if username == "" {
-		myjson.JsonError(w, http.StatusBadRequest, "Username header is empty")
+		myjson.JsonError(w, http.StatusBadRequest, "username header is empty")
 		return
 	}
 
@@ -239,7 +227,14 @@ func (h *GatewayHandler) GetUserInfo(w http.ResponseWriter, r *http.Request, ps 
 	)
 
 	if err != nil {
-		myjson.JsonError(w, http.StatusInternalServerError, "Failed to get response: "+err.Error())
+		if err != http.ErrServerClosed {
+			h.Logger.Errorln("failed to get response: " + err.Error())
+			myjson.JsonError(w, http.StatusInternalServerError, "failed to get response: "+err.Error())
+			return
+		}
+
+		userInfo.Privilege = nil
+		myjson.JsonResponce(w, http.StatusOK, userInfo)
 		return
 	}
 
@@ -249,7 +244,7 @@ func (h *GatewayHandler) GetUserInfo(w http.ResponseWriter, r *http.Request, ps 
 func (h *GatewayHandler) GetPrivilege(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	username := r.Header.Get("X-User-Name")
 	if username == "" {
-		log.Printf("Username header is empty\n")
+		h.Logger.Errorln("username header is empty")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -260,17 +255,10 @@ func (h *GatewayHandler) GetPrivilege(w http.ResponseWriter, r *http.Request, ps
 	)
 
 	if err != nil {
-		h.Logger.Errorln("Failed to get response: " + err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		h.Logger.Errorln("failed to get response: " + err.Error())
+		myjson.JsonError(w, http.StatusServiceUnavailable, "Bonus Service is unavailable")
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(privilegeInfo); err != nil {
-		log.Printf("Failed to encode response: %s\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	myjson.JsonResponce(w, http.StatusOK, privilegeInfo)
 }

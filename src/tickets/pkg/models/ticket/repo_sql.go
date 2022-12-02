@@ -101,7 +101,9 @@ func (repo *TicketPostgresRepository) Add(ticket *Ticket) error {
 
 func (repo *TicketPostgresRepository) Delete(ticketUID string) error {
 	_, err := repo.DB.Exec(
-		"DELETE FROM ticket WHERE ticket_uid = $1;",
+		// "DELETE FROM ticket WHERE ticket_uid = $1;",
+		"UPDATE ticket SET status = $1 WHERE ticket_uid = $2;",
+		"CANCELED",
 		ticketUID,
 	)
 	if err != nil {

@@ -82,22 +82,18 @@ func BuyTicket(tAddr, fAddr, bAddr, username string, info *tickets.BuyTicketInfo
 	return &purchaseInfo, nil
 }
 
-func _GetUserTickets(ticketsServiceAddress, username string) (*[]tickets.Ticket, error) {
+func GetTicketsByUsername(ticketsServiceAddress, username string) (*[]tickets.Ticket, error) {
 	requestURL := fmt.Sprintf("%s/api/v1/tickets/%s", ticketsServiceAddress, username)
-
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
-		fmt.Println("Failed to create an http request")
+		log.Println("Failed to create an http request")
 		return nil, err
 	}
-
-	client := &http.Client{
-		Timeout: 10 * time.Minute,
-	}
+	client := &http.Client{Timeout: 1 * time.Minute}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Failed request to flight service: %w", err)
+		return nil, fmt.Errorf("failed request to flight service: %w", err)
 	}
 
 	tickets := &[]tickets.Ticket{}
@@ -110,7 +106,7 @@ func _GetUserTickets(ticketsServiceAddress, username string) (*[]tickets.Ticket,
 
 	if err = myjson.From(body, tickets); err != nil {
 		log.Println(string(body))
-		return nil, fmt.Errorf("Failed to decode response: %w", err)
+		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	return tickets, nil
@@ -120,7 +116,6 @@ func CreateTicket(ticketsServiceAddress, username, flightNumber string, price in
 	requestURL := fmt.Sprintf("%s/api/v1/tickets", ticketsServiceAddress)
 
 	uid := uuid.New().String()
-
 	ticket := &tickets.Ticket{
 		TicketUID:    uid,
 		FlightNumber: flightNumber,
@@ -128,11 +123,10 @@ func CreateTicket(ticketsServiceAddress, username, flightNumber string, price in
 		Username:     username,
 		Price:        price,
 	}
-
-	data, err := myjson.To(*ticket)
+	data, err := myjson.To(ticket)
 	if err != nil {
-		log.Println(data)
-		return "", fmt.Errorf("encoding error: %w", err)
+		log.Println(err.Error())
+		return "", err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, requestURL, bytes.NewReader(data))
@@ -142,41 +136,33 @@ func CreateTicket(ticketsServiceAddress, username, flightNumber string, price in
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{
-		Timeout: 1 * time.Minute,
-	}
+	client := &http.Client{Timeout: 1 * time.Minute}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("Failed request to flight service: %w", err)
+		return "", fmt.Errorf("failed request to flight service: %w", err)
 	}
 	res.Body.Close()
-	// log.Println("Create ticket ", res.StatusCode)
 
 	return uid, nil
 }
 
 func CancelTicket(ticketServiceAddress, bonusServiceAddress, ticketUID, username string) error {
 	requestURL := fmt.Sprintf("%s/api/v1/tickets/%s", ticketServiceAddress, ticketUID)
-
 	req, err := http.NewRequest(http.MethodDelete, requestURL, nil)
 	if err != nil {
-		log.Println("Failed to create an http request")
+		log.Println(err.Error())
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-User-Name", username)
-
-	client := &http.Client{
-		Timeout: 1 * time.Minute,
-	}
+	client := &http.Client{Timeout: 1 * time.Minute}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Failed request to flight service: %w", err)
+		return fmt.Errorf("failed request to flight service: %w", err)
 	}
 	res.Body.Close()
 	log.Println("Delete ticket ", res.StatusCode)
-
 	return nil
 }

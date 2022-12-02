@@ -55,7 +55,7 @@ func (h *BonusHandler) CreatePrivilege(w http.ResponseWriter, r *http.Request, p
 
 	h.Logger.Infoln("Trying to create privilege")
 	if err = h.BonusRepo.CreatePrivilege(record); err != nil {
-		h.Logger.Infoln("whar ne tak " + err.Error())
+		h.Logger.Infoln("chto ne tak " + err.Error())
 		oldRecord, _ := h.BonusRepo.GetPrivilegeByUsername(record.Username)
 		record.Balance += oldRecord.Balance
 		h.Logger.Infoln(oldRecord, record)
