@@ -230,8 +230,8 @@ func (h *GatewayHandler) GetUserInfo(w http.ResponseWriter, r *http.Request, ps 
 		}
 
 		pseudoUserInfo := struct {
-			Privilege   string `json:"privilege"`
-			TicketsInfo *[]tickets.TicketInfo
+			Privilege   string                `json:"privilege"`
+			TicketsInfo *[]tickets.TicketInfo `json:"tickets"`
 		}{
 			TicketsInfo: userInfo.TicketsInfo,
 		}
