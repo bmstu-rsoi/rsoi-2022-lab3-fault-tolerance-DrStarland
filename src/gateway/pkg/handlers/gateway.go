@@ -22,7 +22,6 @@ type GatewayHandler struct {
 	Logger               *zap.SugaredLogger
 }
 
-// ne menyat
 func (h *GatewayHandler) GetAllFlights(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	params := r.URL.Query()
 
@@ -76,7 +75,6 @@ func (h *GatewayHandler) GetAllFlights(w http.ResponseWriter, r *http.Request, p
 	myjson.JsonResponce(w, http.StatusOK, result)
 }
 
-// ne menyat
 func (h *GatewayHandler) GetUserTickets(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	username := r.Header.Get("X-User-Name")
 	if username == "" {
@@ -102,7 +100,6 @@ func (h *GatewayHandler) GetUserTickets(w http.ResponseWriter, r *http.Request, 
 	w.WriteHeader(http.StatusOK)
 }
 
-// ne menyat
 func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	username := r.Header.Get("X-User-Name")
 	if username == "" {
@@ -127,7 +124,6 @@ func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// ne menyat
 func (h *GatewayHandler) GetUserTicket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	username := r.Header.Get("X-User-Name")
 	if username == "" {
