@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 
@@ -186,8 +187,9 @@ func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps
 		// 	return
 		// }
 		h.Logger.Errorln(err.Error())
-
 		w.WriteHeader(http.StatusNoContent)
+
+		go _cancelTail(h.BonusServiceAddress, ticketUID, username, ticketInfo.Price)
 		return
 	}
 
@@ -219,6 +221,36 @@ func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func _cancelTail(address, ticketUID, username string, price int) {
+	time.Sleep(5 * time.Second)
+	userPrivelege, err := services.GetUserPrivilege(address, username)
+	if err != nil {
+		go _cancelTail(address, ticketUID, username, price)
+		return
+	}
+
+	var bonusRecord *privilege.PrivilegeHistory
+	for _, record := range *userPrivelege.History {
+		if record.TicketUID == ticketUID {
+			bonusRecord = &record
+		}
+	}
+
+	if bonusRecord != nil {
+		if bonusRecord.OperationType == "DEBIT_THE_ACCOUNT" {
+			newBalance := userPrivelege.Balance - (price / 10)
+			err = services.UpdatePrivilege(address, username, newBalance)
+		} else if bonusRecord.OperationType == "FILL_IN_BALANCE" {
+			newBalance := userPrivelege.Balance - bonusRecord.BalanceDiff
+			err = services.UpdatePrivilege(address, username, newBalance)
+		}
+
+		if err != nil {
+			go _cancelTail(address, ticketUID, username, price)
+		}
+	}
 }
 
 func (h *GatewayHandler) GetUserTicket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
