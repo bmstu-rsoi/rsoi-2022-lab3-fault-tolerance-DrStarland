@@ -121,6 +121,7 @@ func CreatePrivilege(bonusServiceAddress, username string, balance int) error {
 		log.Println("Failed to create an http request")
 		return err
 	}
+	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 1 * time.Minute}
 
@@ -134,23 +135,24 @@ func CreatePrivilege(bonusServiceAddress, username string, balance int) error {
 }
 
 func UpdatePrivilege(bonusServiceAddress, username string, balance int) error {
-	requestURL := fmt.Sprintf("%s/api/v1/bonus/%s", bonusServiceAddress, username)
+	requestURL := fmt.Sprintf("%s/api/v1/bonus/privilege", bonusServiceAddress)
 
 	priv := &privilege.Privilege{
 		Username: username,
 		Balance:  balance,
 	}
-
 	data, err := myjson.To(priv)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, requestURL, bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPut, requestURL, bytes.NewReader(data))
 	if err != nil {
 		log.Println("Failed to create an http request")
 		return err
 	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-User-Name", username)
 
 	client := &http.Client{Timeout: 1 * time.Minute}
 

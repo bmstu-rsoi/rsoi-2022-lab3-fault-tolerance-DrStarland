@@ -45,9 +45,6 @@ func (repo *PostgresRepository) UpdatePrivilege(record *Privilege) error {
 		record.Balance,
 		record.Username,
 	)
-	if err != nil {
-		return err
-	}
 	return err
 }
 

@@ -140,7 +140,7 @@ func CreateTicket(ticketsServiceAddress, username, flightNumber string, price in
 
 	res, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed request to flight service: %w", err)
+		return "", fmt.Errorf("failed request to flights service: %w", err)
 	}
 	res.Body.Close()
 
@@ -160,7 +160,7 @@ func CancelTicket(ticketServiceAddress, bonusServiceAddress, ticketUID, username
 
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed request to flight service: %w", err)
+		return fmt.Errorf("failed request to tickets service: %w", err)
 	}
 	res.Body.Close()
 	log.Println("Delete ticket ", res.StatusCode)

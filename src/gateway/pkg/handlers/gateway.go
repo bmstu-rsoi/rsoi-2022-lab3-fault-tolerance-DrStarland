@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"gateway/pkg/models/flights"
+	"gateway/pkg/models/privilege"
 	"gateway/pkg/models/tickets"
 	"gateway/pkg/myjson"
 	"gateway/pkg/services"
@@ -108,10 +109,41 @@ func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
-	err := services.CancelTicket(
+	ticketUID := ps.ByName("ticketUID")
+
+	ticketsInfo, err := services.GetUserTickets(
+		h.TicketServiceAddress,
+		h.FlightServiceAddress,
+		username,
+	)
+
+	// h.Logger.Infoln("Where is nil 3?", ticketsInfo, err)
+
+	if err != nil {
+		h.Logger.Errorln("failed to get response: " + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// h.Logger.Infoln("Where is nil 4?")
+	var ticketInfo *tickets.TicketInfo
+	for _, ticket := range *ticketsInfo {
+		if ticket.TicketUID == ticketUID {
+			ticketInfo = &ticket
+			break
+		}
+	}
+	// h.Logger.Infoln("Where is nil 5? ", ticketInfo)
+	// h.Logger.Info(ticketUID, ticketInfo)
+	if ticketInfo == nil {
+		myjson.JsonError(w, http.StatusNotFound, "ticket not found")
+		return
+	}
+
+	err = services.CancelTicket(
 		h.TicketServiceAddress,
 		h.BonusServiceAddress,
-		ps.ByName("ticketUID"),
+		ticketUID,
 		username,
 	)
 
@@ -119,6 +151,68 @@ func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps
 		h.Logger.Errorln("failed to get response: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	// type PrivilegeInfo struct {
+	// 	Balance int                 `json:"balance"`
+	// 	Status  string              `json:"status"`
+	// 	History *[]PrivilegeHistory `json:"history"`
+	// }
+
+	// type PrivilegeHistory struct {
+	// 	ID            int    `json:"id"`
+	// 	PrivilegeID   int    `json:"privilegeId"`
+	// 	TicketUID     string `json:"ticketUid"`
+	// 	Date          string `json:"date"`
+	// 	BalanceDiff   int    `json:"balanceDiff"`
+	// 	OperationType string `json:"operationType"`
+	// }
+
+	// type Ticket struct {
+	// 	ID           int    `json:"id"`
+	// 	TicketUID    string `json:"ticketUid"`
+	// 	Username     string `json:"username"`
+	// 	FlightNumber string `json:"flightNumber"`
+	// 	Price        int    `json:"price"`
+	// 	Status       string `json:"status"`
+	// }
+
+	userPrivelege, err := services.GetUserPrivilege(h.BonusServiceAddress, username)
+	if err != nil {
+		// реализовать нормальный досрочный выход
+		if err != http.ErrServerClosed {
+			h.Logger.Errorln("failed to get response: " + err.Error())
+			myjson.JsonError(w, http.StatusInternalServerError, "failed to get response: "+err.Error())
+			return
+		}
+		h.Logger.Errorln(err.Error())
+	}
+
+	var bonusRecord *privilege.PrivilegeHistory
+	for _, record := range *userPrivelege.History {
+		if record.TicketUID == ticketUID {
+			bonusRecord = &record
+		}
+	}
+
+	if bonusRecord == nil {
+		h.Logger.Errorln("ООООЙ")
+	} else {
+		h.Logger.Infoln(*bonusRecord)
+	}
+
+	if bonusRecord.OperationType == "DEBIT_THE_ACCOUNT" {
+		newBalance := userPrivelege.Balance - (ticketInfo.Price / 10)
+		h.Logger.Infoln(userPrivelege.Balance, newBalance)
+		err = services.UpdatePrivilege(h.BonusServiceAddress, username, newBalance)
+	} else if bonusRecord.OperationType == "FILL_IN_BALANCE" {
+		newBalance := userPrivelege.Balance - bonusRecord.BalanceDiff
+		h.Logger.Infoln(userPrivelege.Balance, newBalance)
+		err = services.UpdatePrivilege(h.BonusServiceAddress, username, newBalance)
+	}
+
+	if err != nil {
+		h.Logger.Errorln("Cancel ticket: ", err.Error())
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -156,6 +250,7 @@ func (h *GatewayHandler) GetUserTicket(w http.ResponseWriter, r *http.Request, p
 	for _, ticket := range *ticketsInfo {
 		if ticket.TicketUID == ticketUID {
 			ticketInfo = &ticket
+			break
 		}
 	}
 	// h.Logger.Infoln("Where is nil 5? ", ticketInfo)

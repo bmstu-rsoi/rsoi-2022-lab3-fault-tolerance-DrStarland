@@ -70,6 +70,34 @@ func (h *BonusHandler) CreatePrivilege(w http.ResponseWriter, r *http.Request, p
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *BonusHandler) UpdatePrivilege(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	defer func() {
+		if err := recover().(error); err != nil {
+			h.Logger.Errorln("Recovered in f: " + err.Error())
+		}
+	}()
+	record := &privilege.Privilege{}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		h.Logger.Errorln(err.Error())
+	}
+	r.Body.Close()
+
+	if err = myjson.From(body, record); err != nil {
+		myjson.JsonError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err = h.BonusRepo.UpdatePrivilege(record); err != nil {
+		h.Logger.Infoln("Chto ne tak " + err.Error())
+		myjson.JsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *BonusHandler) GetPrivilegeByUsername(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	privilege, err := h.BonusRepo.GetPrivilegeByUsername(ps.ByName("username"))
 	if err != nil {
