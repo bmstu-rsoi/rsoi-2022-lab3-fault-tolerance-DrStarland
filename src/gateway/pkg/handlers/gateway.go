@@ -180,11 +180,11 @@ func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps
 	userPrivelege, err := services.GetUserPrivilege(h.BonusServiceAddress, username)
 	if err != nil {
 		// реализовать нормальный досрочный выход
-		if err != http.ErrServerClosed {
-			h.Logger.Errorln("failed to get response: " + err.Error())
-			myjson.JsonError(w, http.StatusInternalServerError, "failed to get response: "+err.Error())
-			return
-		}
+		// if err != http.ErrServerClosed {
+		// 	h.Logger.Errorln("failed to get response: " + err.Error())
+		// 	myjson.JsonError(w, http.StatusInternalServerError, "failed to get response: "+err.Error())
+		// 	return
+		// }
 		h.Logger.Errorln(err.Error())
 	}
 
