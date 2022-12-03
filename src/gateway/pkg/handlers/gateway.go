@@ -186,6 +186,9 @@ func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps
 		// 	return
 		// }
 		h.Logger.Errorln(err.Error())
+
+		w.WriteHeader(http.StatusNoContent)
+		return
 	}
 
 	var bonusRecord *privilege.PrivilegeHistory
