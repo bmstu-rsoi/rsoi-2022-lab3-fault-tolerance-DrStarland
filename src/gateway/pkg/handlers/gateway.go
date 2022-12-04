@@ -24,6 +24,15 @@ type GatewayHandler struct {
 	Logger               *zap.SugaredLogger
 }
 
+func (h *GatewayHandler) checkUserHeader(r *http.Request) (string, bool) {
+	username := r.Header.Get("X-User-Name")
+	if username == "" {
+		h.Logger.Errorln("Username header is empty")
+		return username, false
+	}
+	return username, true
+}
+
 func (h *GatewayHandler) GetAllFlights(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	params := r.URL.Query()
 
@@ -78,9 +87,8 @@ func (h *GatewayHandler) GetAllFlights(w http.ResponseWriter, r *http.Request, p
 }
 
 func (h *GatewayHandler) GetUserTickets(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	username := r.Header.Get("X-User-Name")
-	if username == "" {
-		h.Logger.Errorln("username header is empty")
+	username, isUsername := h.checkUserHeader(r)
+	if !isUsername {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -103,9 +111,8 @@ func (h *GatewayHandler) GetUserTickets(w http.ResponseWriter, r *http.Request, 
 }
 
 func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	username := r.Header.Get("X-User-Name")
-	if username == "" {
-		h.Logger.Info("username header is empty")
+	username, isUsername := h.checkUserHeader(r)
+	if !isUsername {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -154,38 +161,8 @@ func (h *GatewayHandler) CancelTicket(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
-	// type PrivilegeInfo struct {
-	// 	Balance int                 `json:"balance"`
-	// 	Status  string              `json:"status"`
-	// 	History *[]PrivilegeHistory `json:"history"`
-	// }
-
-	// type PrivilegeHistory struct {
-	// 	ID            int    `json:"id"`
-	// 	PrivilegeID   int    `json:"privilegeId"`
-	// 	TicketUID     string `json:"ticketUid"`
-	// 	Date          string `json:"date"`
-	// 	BalanceDiff   int    `json:"balanceDiff"`
-	// 	OperationType string `json:"operationType"`
-	// }
-
-	// type Ticket struct {
-	// 	ID           int    `json:"id"`
-	// 	TicketUID    string `json:"ticketUid"`
-	// 	Username     string `json:"username"`
-	// 	FlightNumber string `json:"flightNumber"`
-	// 	Price        int    `json:"price"`
-	// 	Status       string `json:"status"`
-	// }
-
 	userPrivelege, err := services.GetUserPrivilege(h.BonusServiceAddress, username)
 	if err != nil {
-		// реализовать нормальный досрочный выход
-		// if err != http.ErrServerClosed {
-		// 	h.Logger.Errorln("failed to get response: " + err.Error())
-		// 	myjson.JsonError(w, http.StatusInternalServerError, "failed to get response: "+err.Error())
-		// 	return
-		// }
 		h.Logger.Errorln(err.Error())
 		w.WriteHeader(http.StatusNoContent)
 
@@ -254,9 +231,8 @@ func _cancelTail(address, ticketUID, username string, price int) {
 }
 
 func (h *GatewayHandler) GetUserTicket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	username := r.Header.Get("X-User-Name")
-	if username == "" {
-		h.Logger.Errorln("Username header is empty")
+	username, isUsername := h.checkUserHeader(r)
+	if !isUsername {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -299,9 +275,8 @@ func (h *GatewayHandler) GetUserTicket(w http.ResponseWriter, r *http.Request, p
 }
 
 func (h *GatewayHandler) BuyTicket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	username := r.Header.Get("X-User-Name")
-	if username == "" {
-		h.Logger.Errorln("username header is empty")
+	username, isUsername := h.checkUserHeader(r)
+	if !isUsername {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -339,9 +314,9 @@ func (h *GatewayHandler) BuyTicket(w http.ResponseWriter, r *http.Request, ps ht
 }
 
 func (h *GatewayHandler) GetUserInfo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	username := r.Header.Get("X-User-Name")
-	if username == "" {
-		myjson.JsonError(w, http.StatusBadRequest, "username header is empty")
+	username, isUsername := h.checkUserHeader(r)
+	if !isUsername {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -374,9 +349,8 @@ func (h *GatewayHandler) GetUserInfo(w http.ResponseWriter, r *http.Request, ps 
 }
 
 func (h *GatewayHandler) GetPrivilege(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	username := r.Header.Get("X-User-Name")
-	if username == "" {
-		h.Logger.Errorln("username header is empty")
+	username, isUsername := h.checkUserHeader(r)
+	if !isUsername {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
